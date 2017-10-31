@@ -5,13 +5,16 @@
 package edu.illinois.starts.jdeps;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -259,5 +262,27 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
         DirectoryScanner classScanner = new DirectoryScanner(getClassesDirectory(), new TestListResolver("*"));
         DefaultScanResult scanResult = classScanner.scan().append(testScanner.scan());
         return scanResult.getFiles();
+    }
+
+    public Map<String, String> getAllTimes() {
+        Map<String, String> result = new HashMap<>();
+
+        File file = new File(getReportsDirectory(), "allTestTimes.txt");
+
+        try (Scanner scanner = new Scanner(file)) {
+
+            while (scanner.hasNextLine()) {
+                String[] line = scanner.nextLine().split(" ");
+                result.put(line[0], line[1]);
+            }
+
+            scanner.close();
+
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+
+        return result;
+
     }
 }
