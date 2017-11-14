@@ -1,6 +1,6 @@
 # STARTS (*STA*tic *R*egression *T*est *S*election) Overview
 
-[![Build Status](https://travis-ci.org/tonylou7/starts.svg?branch=master)](https://travis-ci.org/tonylou7/starts)
+[![Build Status](https://travis-ci.org/TestingResearchIllinois/starts.svg?branch=master)](https://travis-ci.org/TestingResearchIllinois/starts)
 
 STARTS is a tool for static class-level regression test selection tool
 for Maven-based Java programs.
