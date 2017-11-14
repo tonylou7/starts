@@ -5,8 +5,8 @@
 package edu.illinois.starts.jdeps;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
