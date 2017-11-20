@@ -5,8 +5,9 @@
 package edu.illinois.starts.jdeps;
 
 import java.io.File;
-import java.lang.reflect.Field;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -264,25 +265,82 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
         return scanResult.getFiles();
     }
 
-    public Map<String, String> getAllTimes() {
+    public Map<String, String> getTestTimesFromSurefileReports() {
+        Map<String, String> curTestTimes = new HashMap<>();
+        FilenameFilter textFilter = new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".txt");
+            }
+        };
+        final String time = "Time elapsed:";
+        File[] files = getReportsDirectory().listFiles(textFilter);
+        for (File file : files) {
+            try {
+                Scanner scanner = new Scanner(file);
+                int nameLength = time.length();
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    int timeStart = line.indexOf(time);
+                    if (timeStart > 0) {
+                        timeStart += nameLength + 1;
+                        int timeEnd = line.indexOf("s", timeStart) - 1;
+                        curTestTimes.put(line.substring(timeEnd + 8), line.substring(timeStart, timeEnd));
+                    }
+                }
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+        return curTestTimes;
+    }
+
+    public Map<String, String> getEstimatedTestTimes() {
         Map<String, String> result = new HashMap<>();
-
-        File file = new File(getReportsDirectory(), "allTestTimes.txt");
-
-        try (Scanner scanner = new Scanner(file)) {
-
+        File testTimeLog = new File(".starts", "TestTimeTable.txt");
+        try (Scanner scanner = new Scanner(testTimeLog)) {
             while (scanner.hasNextLine()) {
                 String[] line = scanner.nextLine().split(" ");
                 result.put(line[0], line[1]);
             }
-
             scanner.close();
-
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
-
         return result;
+    }
 
+    public void updateTestTimeTable() throws MojoExecutionException {
+        String timeTableName = ".starts/TestTimeTable.txt";
+        try {
+            File file = new File(timeTableName);
+            Map<String, String> curTestTimes = getTestTimesFromSurefileReports();
+            if (!file.exists()) {
+                file.createNewFile();
+                Writer.writeTimeTableToFile(curTestTimes, timeTableName);
+            } else {
+                Scanner scanner = new Scanner(file);
+                List<String> lines = new ArrayList<>();
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    String testName = line.substring(0, line.indexOf(" "));
+                    if (curTestTimes.containsKey(testName)) {
+                        String[] split = line.split(" ");
+                        int count = Integer.parseInt(split[2]);
+                        double ave = Double.parseDouble(split[1]);
+                        double cur = Double.parseDouble(curTestTimes.get(split[0]));
+                        ave = (cur + ave * count++) / count;
+                        split[3] = cur + "," + split[3];
+                        split[2] = Integer.toString(count);
+                        split[1] = Double.toString(ave);
+                        line = split[0] + " " + split[1] + " " + split[2] + " " + split[3];
+                    }
+                    lines.add(line);
+                }
+                scanner.close();
+                Writer.writeToFile(lines, timeTableName);
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
     }
 }

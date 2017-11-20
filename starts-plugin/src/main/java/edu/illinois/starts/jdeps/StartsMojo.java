@@ -29,5 +29,6 @@ public class StartsMojo extends RunMojo {
         long end = System.currentTimeMillis();
         logger.log(Level.FINE, "[PROFILE] TEST-RUNNING-TIME: " + Writer.millsToSeconds(end - endOfRunMojo));
         logger.log(Level.FINE, "[PROFILE] STARTS-MOJO-TOTAL: " + Writer.millsToSeconds(end - endOfRunMojo));
+        updateTestTimeTable();
     }
 }

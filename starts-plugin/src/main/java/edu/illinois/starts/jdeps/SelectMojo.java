@@ -52,17 +52,18 @@ public class SelectMojo extends DiffMojo {
         setIncludesExcludes();
         Set<String> allTests = new HashSet<>(getTestClasses("checkIfAllAffected"));
         Set<String> affectedTests = new HashSet<>(allTests);
-        Set<String> affectedTestsAndTime = new HashSet<>();
+        Set<String> affectedTestsAndTimes = new HashSet<>();
         Pair<Set<String>, Set<String>> data = computeChangeData();
         Set<String> nonAffectedTests = data == null ? new HashSet<String>() : data.getKey();
-        affectedTests.removeAll(nonAffectedTests);
         if (allTests.equals(nonAffectedTests)) {
             logger.log(Level.INFO, "********** Run **********");
             logger.log(Level.INFO, "No tests are selected to run.");
-        }
-        Map<String, String> allTestTimes = getAllTimes();
-        for (String s : affectedTests) {
-            affectedTestsAndTime.add(s + "   -    " + allTestTimes.getOrDefault(s, "Not Enough Data"));
+        } else {
+            affectedTests.removeAll(nonAffectedTests);
+            Map<String, String> allTestTimes = getTestTimesFromSurefileReports();
+            for (String s : affectedTests) {
+                affectedTestsAndTimes.add(s + "   -    " + allTestTimes.getOrDefault(s, "Not Enough Data"));
+            }
         }
         long startUpdate = System.currentTimeMillis();
         if (updateSelectChecksums) {
@@ -70,7 +71,25 @@ public class SelectMojo extends DiffMojo {
         }
         long endUpdate = System.currentTimeMillis();
         logger.log(Level.FINE, "[PROFILE] STARTS-MOJO-UPDATE-TIME: " + Writer.millsToSeconds(endUpdate - startUpdate));
-        //return affectedTests;
-        return affectedTestsAndTime;
+        return affectedTestsAndTimes;
     }
+    // private Set<String> computeAffectedTests() throws MojoExecutionException {
+    //     setIncludesExcludes();
+    //     Set<String> allTests = new HashSet<>(getTestClasses("checkIfAllAffected"));
+    //     Set<String> affectedTests = new HashSet<>(allTests);
+    //     Pair<Set<String>, Set<String>> data = computeChangeData();
+    //     Set<String> nonAffectedTests = data == null ? new HashSet<String>() : data.getKey();
+    //     affectedTests.removeAll(nonAffectedTests);
+    //     if (allTests.equals(nonAffectedTests)) {
+    //         logger.log(Level.INFO, "********** Run **********");
+    //         logger.log(Level.INFO, "No tests are selected to run.");
+    //     }
+    //     long startUpdate = System.currentTimeMillis();
+    //     if (updateSelectChecksums) {
+    //         updateForNextRun(nonAffectedTests);
+    //     }
+    //     long endUpdate = System.currentTimeMillis();
+    //     logger.log(Level.FINE, "[PROFILE] STARTS-MOJO-UPDATE-TIME: " + Writer.millsToSeconds(endUpdate - startUpdate));
+    //     return affectedTests;
+    // }
 }

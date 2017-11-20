@@ -49,6 +49,20 @@ public class Writer {
         }
     }
 
+    public static void writeTimeTableToFile(Map<String, String> map, String filename) {
+        try (BufferedWriter writer = getWriter(filename)) {
+            if (map.isEmpty()) {
+                writer.write("");
+                return;
+            }
+            for (String key : map.keySet()) {
+                writer.write(key + " " + map.get(key) + " " + 1 + " " + map.get(key) + System.lineSeparator());
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
     public static void writeMapToFile(Map map, String filename) {
         try (BufferedWriter writer = getWriter(filename)) {
             if (map.isEmpty()) {
