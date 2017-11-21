@@ -4,6 +4,8 @@
 
 package edu.illinois.starts.jdeps;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 
 import edu.illinois.starts.helpers.Writer;
@@ -29,6 +31,5 @@ public class StartsMojo extends RunMojo {
         long end = System.currentTimeMillis();
         logger.log(Level.FINE, "[PROFILE] TEST-RUNNING-TIME: " + Writer.millsToSeconds(end - endOfRunMojo));
         logger.log(Level.FINE, "[PROFILE] STARTS-MOJO-TOTAL: " + Writer.millsToSeconds(end - endOfRunMojo));
-        updateTestTimeTable();
     }
 }

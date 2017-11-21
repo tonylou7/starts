@@ -42,28 +42,36 @@ public class SelectMojo extends DiffMojo {
         logger = Logger.getGlobal();
         long start = System.currentTimeMillis();
         Set<String> affectedTests = computeAffectedTests();
-        printResult(affectedTests, "AffectedTests");
+        if (estimatSelect) {
+            printTestAndTime(affectedTests);
+        } else {
+            printResult(affectedTests, "AffectedTests");
+        }
         long end = System.currentTimeMillis();
         logger.log(Level.FINE, "[PROFILE] RUN-MOJO-TOTAL: " + Writer.millsToSeconds(end - start));
         logger.log(Level.FINE, "[PROFILE] TEST-RUNNING-TIME: " + 0.0);
+    }
+
+    private void printTestAndTime(Set<String> affectedTests) {
+        Set<String> affectedTestsAndTimes = new HashSet<>();
+        Map<String, String> allTestTimes = getTestTimesFromSurefileReports();
+        for (String s : affectedTests) {
+            affectedTestsAndTimes.add(s + "   -    " + allTestTimes.getOrDefault(s, "Not Enough Data"));
+        }
+        printResult(affectedTestsAndTimes, "AffectedTestsAndTimes");
     }
 
     private Set<String> computeAffectedTests() throws MojoExecutionException {
         setIncludesExcludes();
         Set<String> allTests = new HashSet<>(getTestClasses("checkIfAllAffected"));
         Set<String> affectedTests = new HashSet<>(allTests);
-        Set<String> affectedTestsAndTimes = new HashSet<>();
         Pair<Set<String>, Set<String>> data = computeChangeData();
         Set<String> nonAffectedTests = data == null ? new HashSet<String>() : data.getKey();
+        //should this be moved in to else ?
+        affectedTests.removeAll(nonAffectedTests);
         if (allTests.equals(nonAffectedTests)) {
             logger.log(Level.INFO, "********** Run **********");
             logger.log(Level.INFO, "No tests are selected to run.");
-        } else {
-            affectedTests.removeAll(nonAffectedTests);
-            Map<String, String> allTestTimes = getTestTimesFromSurefileReports();
-            for (String s : affectedTests) {
-                affectedTestsAndTimes.add(s + "   -    " + allTestTimes.getOrDefault(s, "Not Enough Data"));
-            }
         }
         long startUpdate = System.currentTimeMillis();
         if (updateSelectChecksums) {
@@ -71,25 +79,6 @@ public class SelectMojo extends DiffMojo {
         }
         long endUpdate = System.currentTimeMillis();
         logger.log(Level.FINE, "[PROFILE] STARTS-MOJO-UPDATE-TIME: " + Writer.millsToSeconds(endUpdate - startUpdate));
-        return affectedTestsAndTimes;
+        return affectedTests;
     }
-    // private Set<String> computeAffectedTests() throws MojoExecutionException {
-    //     setIncludesExcludes();
-    //     Set<String> allTests = new HashSet<>(getTestClasses("checkIfAllAffected"));
-    //     Set<String> affectedTests = new HashSet<>(allTests);
-    //     Pair<Set<String>, Set<String>> data = computeChangeData();
-    //     Set<String> nonAffectedTests = data == null ? new HashSet<String>() : data.getKey();
-    //     affectedTests.removeAll(nonAffectedTests);
-    //     if (allTests.equals(nonAffectedTests)) {
-    //         logger.log(Level.INFO, "********** Run **********");
-    //         logger.log(Level.INFO, "No tests are selected to run.");
-    //     }
-    //     long startUpdate = System.currentTimeMillis();
-    //     if (updateSelectChecksums) {
-    //         updateForNextRun(nonAffectedTests);
-    //     }
-    //     long endUpdate = System.currentTimeMillis();
-    //     logger.log(Level.FINE, "[PROFILE] STARTS-MOJO-UPDATE-TIME: " + Writer.millsToSeconds(endUpdate - startUpdate));
-    //     return affectedTests;
-    // }
 }

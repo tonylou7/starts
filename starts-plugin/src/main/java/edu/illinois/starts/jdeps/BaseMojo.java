@@ -51,6 +51,12 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
     protected boolean filterLib;
 
     /**
+     * Set this to "true" to enable test time estimation.
+     */
+    @Parameter(property = "estimatSelect", defaultValue = "true")
+    protected boolean estimatSelect;
+
+    /**
      * The directory in which to store STARTS artifacts that are needed between runs.
      */
     protected String artifactsDir;
@@ -296,7 +302,7 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
 
     public Map<String, String> getEstimatedTestTimes() {
         Map<String, String> result = new HashMap<>();
-        File testTimeLog = new File(".starts", "TestTimeTable.txt");
+        File testTimeLog = new File(STARTS_DIRECTORY_PATH, STARTS_SELECT_TIME_TABLE);
         try (Scanner scanner = new Scanner(testTimeLog)) {
             while (scanner.hasNextLine()) {
                 String[] line = scanner.nextLine().split(" ");
@@ -309,8 +315,8 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
         return result;
     }
 
-    public void updateTestTimeTable() throws MojoExecutionException {
-        String timeTableName = ".starts/TestTimeTable.txt";
+    public void updateTestTimeTable(Set<String> nonAffectedTests) throws MojoExecutionException {
+        String timeTableName = STARTS_DIRECTORY_PATH + STARTS_SELECT_TIME_TABLE;
         try {
             File file = new File(timeTableName);
             Map<String, String> curTestTimes = getTestTimesFromSurefileReports();
@@ -323,7 +329,7 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine();
                     String testName = line.substring(0, line.indexOf(" "));
-                    if (curTestTimes.containsKey(testName)) {
+                    if (nonAffectedTests == null || !nonAffectedTests.contains(testName)) {
                         String[] split = line.split(" ");
                         int count = Integer.parseInt(split[2]);
                         double ave = Double.parseDouble(split[1]);

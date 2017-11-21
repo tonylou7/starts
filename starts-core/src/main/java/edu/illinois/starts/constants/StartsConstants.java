@@ -11,6 +11,7 @@ import java.io.File;
  */
 public interface StartsConstants {
     String STARTS_DIRECTORY_PATH = ".starts" + File.separator;
+    String STARTS_SELECT_TIME_TABLE = "TestTimeTable.txt";
     String MIN_SUREFIRE_VERSION = "2.13";
 
     String SUREFIRE_PLUGIN_VM = "org/apache/maven/plugin/surefire/SurefirePlugin";

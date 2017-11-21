@@ -80,6 +80,11 @@ public class RunMojo extends DiffMojo {
         if (updateRunChecksums) {
             updateForNextRun(nonAffectedTests);
         }
+        if (estimatSelect && nonAffectedTests != null) {
+            logger.log(Level.INFO, "**********" + nonAffectedTests.size() + "**********");
+            updateTestTimeTable(nonAffectedTests);
+            logger.log(Level.INFO, "********** updateTestTimeTable(nonAffectedTests) **********");
+        }
         long endUpdateTime = System.currentTimeMillis();
         logger.log(Level.FINE, "[PROFILE] STARTS-MOJO-UPDATE-TIME: "
                 + Writer.millsToSeconds(endUpdateTime - startUpdateTime));
