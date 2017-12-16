@@ -25,6 +25,9 @@ public class StartsMojo extends RunMojo {
     private Logger logger;
 
     public void execute() throws MojoExecutionException {
+        if (estimateSelect) {
+            updateTestTimeTable();
+        }
         long endOfRunMojo = Long.parseLong(System.getProperty("[PROFILE] END-OF-RUN-MOJO: "));
         Logger.getGlobal().setLoggingLevel(Level.parse(loggingLevel));
         logger = Logger.getGlobal();

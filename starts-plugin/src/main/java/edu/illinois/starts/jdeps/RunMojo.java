@@ -65,6 +65,9 @@ public class RunMojo extends DiffMojo {
             logger.log(Level.INFO, "********** Run **********");
             logger.log(Level.INFO, "No tests are selected to run.");
         }
+        if (estimateSelect) {
+            Writer.writeToFile(nonAffectedTests, STARTS_DIRECTORY_PATH + STARTS_NON_AFFECTED_TESTS);
+        }
         long end = System.currentTimeMillis();
         System.setProperty("[PROFILE] END-OF-RUN-MOJO: ", Long.toString(end));
         logger.log(Level.FINE, "[PROFILE] RUN-MOJO-TOTAL: " + Writer.millsToSeconds(end - start));
@@ -79,11 +82,6 @@ public class RunMojo extends DiffMojo {
         long startUpdateTime = System.currentTimeMillis();
         if (updateRunChecksums) {
             updateForNextRun(nonAffectedTests);
-        }
-        if (estimatSelect && nonAffectedTests != null) {
-            logger.log(Level.INFO, "**********" + nonAffectedTests.size() + "**********");
-            updateTestTimeTable(nonAffectedTests);
-            logger.log(Level.INFO, "********** updateTestTimeTable(nonAffectedTests) **********");
         }
         long endUpdateTime = System.currentTimeMillis();
         logger.log(Level.FINE, "[PROFILE] STARTS-MOJO-UPDATE-TIME: "

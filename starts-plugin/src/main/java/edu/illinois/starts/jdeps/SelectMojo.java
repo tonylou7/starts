@@ -42,8 +42,8 @@ public class SelectMojo extends DiffMojo {
         logger = Logger.getGlobal();
         long start = System.currentTimeMillis();
         Set<String> affectedTests = computeAffectedTests();
-        if (estimatSelect) {
-            printTestAndTime(affectedTests);
+        if (estimateSelect && affectedTests.size() > 0) {
+            printTestAndTime(affectedTests, "AffectedTests - EstimateTime//StandardDeviation");
         } else {
             printResult(affectedTests, "AffectedTests");
         }
@@ -52,13 +52,14 @@ public class SelectMojo extends DiffMojo {
         logger.log(Level.FINE, "[PROFILE] TEST-RUNNING-TIME: " + 0.0);
     }
 
-    private void printTestAndTime(Set<String> affectedTests) {
+    private void printTestAndTime(Set<String> affectedTests, String title) {
         Set<String> affectedTestsAndTimes = new HashSet<>();
-        Map<String, String> allTestTimes = getTestTimesFromSurefileReports();
-        for (String s : affectedTests) {
-            affectedTestsAndTimes.add(s + "   -    " + allTestTimes.getOrDefault(s, "Not Enough Data"));
+        Set<String> estimatedTestTimes = getEstimatedTestTimes(affectedTests);
+        if (estimatedTestTimes == null) {
+            logger.log(Level.INFO, "Not enought data, please run mvn starts:starts first.");
+        } else {
+            printResult(estimatedTestTimes, title);
         }
-        printResult(affectedTestsAndTimes, "AffectedTestsAndTimes");
     }
 
     private Set<String> computeAffectedTests() throws MojoExecutionException {
@@ -67,7 +68,6 @@ public class SelectMojo extends DiffMojo {
         Set<String> affectedTests = new HashSet<>(allTests);
         Pair<Set<String>, Set<String>> data = computeChangeData();
         Set<String> nonAffectedTests = data == null ? new HashSet<String>() : data.getKey();
-        //should this be moved in to else ?
         affectedTests.removeAll(nonAffectedTests);
         if (allTests.equals(nonAffectedTests)) {
             logger.log(Level.INFO, "********** Run **********");

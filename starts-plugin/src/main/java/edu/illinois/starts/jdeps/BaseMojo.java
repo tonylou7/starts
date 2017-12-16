@@ -53,8 +53,8 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
     /**
      * Set this to "true" to enable test time estimation.
      */
-    @Parameter(property = "estimatSelect", defaultValue = "true")
-    protected boolean estimatSelect;
+    @Parameter(property = "estimateSelect", defaultValue = "false")
+    protected boolean estimateSelect;
 
     /**
      * The directory in which to store STARTS artifacts that are needed between runs.
@@ -273,15 +273,19 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
 
     public Map<String, String> getTestTimesFromSurefileReports() {
         Map<String, String> curTestTimes = new HashMap<>();
-        FilenameFilter textFilter = new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".txt");
-            }
-        };
         final String time = "Time elapsed:";
-        File[] files = getReportsDirectory().listFiles(textFilter);
-        for (File file : files) {
-            try {
+        try {
+            FilenameFilter textFilter = new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".txt");
+                }
+            };
+            File dir = getReportsDirectory();
+            if (!dir.exists()) {
+                return curTestTimes;
+            }
+            File[] files = dir.listFiles(textFilter);
+            for (File file : files) {
                 Scanner scanner = new Scanner(file);
                 int nameLength = time.length();
                 while (scanner.hasNextLine()) {
@@ -293,21 +297,31 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
                         curTestTimes.put(line.substring(timeEnd + 8), line.substring(timeStart, timeEnd));
                     }
                 }
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
             }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
         }
         return curTestTimes;
     }
 
-    public Map<String, String> getEstimatedTestTimes() {
-        Map<String, String> result = new HashMap<>();
-        File testTimeLog = new File(STARTS_DIRECTORY_PATH, STARTS_SELECT_TIME_TABLE);
-        try (Scanner scanner = new Scanner(testTimeLog)) {
+    public Set<String> getEstimatedTestTimes(Set<String> affectedTests) {
+        Set<String> result = new HashSet<>();
+        try {
+            File testTimeLog = new File(STARTS_DIRECTORY_PATH, STARTS_SELECT_TIME_TABLE);
+            if (!testTimeLog.exists()) {
+                return null;
+            }
+            Scanner scanner = new Scanner(testTimeLog);
+            double sum = 0.0;
             while (scanner.hasNextLine()) {
                 String[] line = scanner.nextLine().split(" ");
-                result.put(line[0], line[1]);
+                if (affectedTests.contains(line[0])) {
+                    sum += Double.parseDouble(line[1]);
+                    result.add(line[0] + " " + line[1] + "s//" + line[3] + "s");
+                }
             }
+            sum = Math.round(sum * 1000.0) / 1000.0;
+            result.add("Total Estimate Time: " + sum);
             scanner.close();
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -315,8 +329,27 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
         return result;
     }
 
-    public void updateTestTimeTable(Set<String> nonAffectedTests) throws MojoExecutionException {
+    private Set<String> getNonAffectedTestsFromFile() {
+        Set<String> nonAffectedTests = new HashSet<>();
+        try {
+            File nonAffectedTestsFile = new File(STARTS_DIRECTORY_PATH + STARTS_NON_AFFECTED_TESTS);
+            Scanner scanner = new Scanner(nonAffectedTestsFile);
+            while (scanner.hasNextLine()) {
+                nonAffectedTests.add(scanner.nextLine());
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return nonAffectedTests;
+    }
+
+    public void updateTestTimeTable() throws MojoExecutionException {
+        // Design of the Time Table
+        //  0        1        2       3                  4         5         6
+        // TestName AvgTime #ofTest StandardDeviaction SquareSum PastTests PastEstimate
         String timeTableName = STARTS_DIRECTORY_PATH + STARTS_SELECT_TIME_TABLE;
+        Set<String> nonAffectedTests = getNonAffectedTestsFromFile();
+        double roundOff = 1000.0;
         try {
             File file = new File(timeTableName);
             Map<String, String> curTestTimes = getTestTimesFromSurefileReports();
@@ -333,12 +366,20 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
                         String[] split = line.split(" ");
                         int count = Integer.parseInt(split[2]);
                         double ave = Double.parseDouble(split[1]);
+                        split[6] = " " + ave + "," + split[6];
                         double cur = Double.parseDouble(curTestTimes.get(split[0]));
+                        double squareSum = Double.parseDouble(split[4]) + cur * cur;
                         ave = (cur + ave * count++) / count;
-                        split[3] = cur + "," + split[3];
-                        split[2] = Integer.toString(count);
-                        split[1] = Double.toString(ave);
-                        line = split[0] + " " + split[1] + " " + split[2] + " " + split[3];
+                        double stdev = Math.sqrt(count * squareSum - Math.pow(ave * count, 2)) / count;
+                        ave = Math.round(ave * roundOff) / roundOff;
+                        stdev = Math.round(stdev * roundOff) / roundOff;
+                        split[1] = " " + Double.toString(ave);
+                        split[2] = " " + Integer.toString(count);
+                        split[3] = " " + Double.toString(stdev);
+                        split[4] = " " + Double.toString(squareSum);
+                        split[5] = " " + cur + "," + split[5];
+                        line = split[0] + split[1] + split[2] + split[3] + split[4] + split[5] + split[6];
+                        Logger.getGlobal().log(Level.INFO, "********* " + line);
                     }
                     lines.add(line);
                 }

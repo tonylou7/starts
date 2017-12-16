@@ -56,7 +56,11 @@ public class Writer {
                 return;
             }
             for (String key : map.keySet()) {
-                writer.write(key + " " + map.get(key) + " " + 1 + " " + map.get(key) + System.lineSeparator());
+                double cur = Double.parseDouble(map.get(key));
+                double squareSum = cur * cur;
+                squareSum = Math.round(squareSum * 1000.0) / 1000.0;
+                String line = key + " " + cur + " 1 0.0 " + squareSum + " " + cur + " NA" + System.lineSeparator();
+                writer.write(line);
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
