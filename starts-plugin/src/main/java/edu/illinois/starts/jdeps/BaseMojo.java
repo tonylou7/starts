@@ -366,7 +366,6 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
                         String[] split = line.split(" ");
                         int count = Integer.parseInt(split[2]);
                         double ave = Double.parseDouble(split[1]);
-                        split[6] = " " + ave + "," + split[6];
                         double cur = Double.parseDouble(curTestTimes.get(split[0]));
                         double squareSum = Double.parseDouble(split[4]) + cur * cur;
                         ave = (cur + ave * count++) / count;
@@ -378,7 +377,7 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
                         split[3] = " " + Double.toString(stdev);
                         split[4] = " " + Double.toString(squareSum);
                         split[5] = " " + cur + "," + split[5];
-                        line = split[0] + split[1] + split[2] + split[3] + split[4] + split[5] + split[6];
+                        line = split[0] + split[1] + split[2] + split[3] + split[4] + split[5];
                         Logger.getGlobal().log(Level.INFO, "********* " + line);
                     }
                     lines.add(line);
